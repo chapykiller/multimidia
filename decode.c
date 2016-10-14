@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[]) {
     if(argc < 3) {
-        printf("Poucos argumentos");
+        printf("\nPoucos argumentos\n");
         return -1;
     }
 
@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     bDifference = bRunlength = bHuffman = 0;
 
     char filenames[2][50];
-    filenames[0] = filenames[1] = '\0';
+    filenames[0][0] = filenames[1][0] = '\0';
 
     int i;
     for(i = 1; i < argc; i++) {
