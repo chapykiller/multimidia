@@ -7,6 +7,11 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    if(argc > 3) {
+        printf("\nMuitos argumentos\n");
+        return -1;
+    }
+
     // Flags que indicam quais codificações serão usadas
     int bDifference, bRunlength, bHuffman;
     bDifference = bRunlength = bHuffman = 0;
@@ -23,4 +28,6 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    return 0;
 }

@@ -1,9 +1,16 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "wave_reader.h"
+
 int main(int argc, char *argv[]) {
     if(argc < 3) {
         printf("\nPoucos argumentos\n");
+        return -1;
+    }
+
+    if(argc > 6) {
+        printf("\nMuitos argumentos\n");
         return -1;
     }
 
@@ -36,4 +43,12 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    // Lê o arquivo wave que será codificado
+    wav_hdr* header = readWave(filenames[0]);
+    if(header == 0) {
+        return -1;
+    }
+
+    return 0;
 }
