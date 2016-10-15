@@ -88,7 +88,7 @@ int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr
 
     fwrite((void*)header, sizeof(wav_hdr), 1, f);
 
-    fwrite((void*)data, data_size, 1, f);
+    fwrite((void*)data, data_size*sizeof(int8_t), 1, f);
 
     fclose(f);
 }
