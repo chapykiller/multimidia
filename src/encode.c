@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "wave_reader.h"
+
+int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size);
 
 int main(int argc, char *argv[]) {
     if(argc < 3) {
@@ -45,10 +48,47 @@ int main(int argc, char *argv[]) {
     }
 
     // Lê o arquivo wave que será codificado
-    wav_hdr* header = readWave(filenames[0]);
+    int8_t *wav_data;
+    wav_hdr* header;
+
+    header = readWave(filenames[0], wav_data);
     if(header == 0) {
         return -1;
     }
 
+    // Salva o arquivo codificado
+    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, wav_data, /* TODO mudar isso*/0) != 0) {
+        printf("\nNão foi possível salvar o arquivo codificado\n");
+
+        free(header);
+        free(wav_data);
+
+        return -1;
+    }
+
+    free(header);
+    free(wav_data);
+
     return 0;
+}
+
+int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size) {
+    FILE *f;
+
+    f = fopen(filename, "w");
+	if(f == NULL) {
+		printf("\nNão foi possivel abrir o arquivo %s\n", filename);
+		return -1;
+	}
+
+    int8_t codHeader = 0;
+    codHeader = (int8_t)(( (difference<<2) + (runlength<<1) + (huffman<<0) ) << 5);
+
+    fwrite((void*)&codHeader, sizeof(int8_t), 1, f);
+
+    fwrite((void*)header, sizeof(wav_hdr), 1, f);
+
+    fwrite((void*)data, data_size, 1, f);
+
+    fclose(f);
 }
