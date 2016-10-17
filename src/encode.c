@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "wave_reader.h"
 
 int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size);
+
+int obtainSamples(wav_hdr* header, int8_t *data, int32_t *samples);
 
 int main(int argc, char *argv[]) {
     if(argc < 3) {
@@ -56,18 +59,31 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    int32_t *samples;
+    int samples_size;
+
+    samples_size = obtainSamples(header, wav_data, samples);
+
+    if(samples_size < 0) {
+        free(header);
+        free(wav_data);
+        return -1;
+    }
+
     // Salva o arquivo codificado
-    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, wav_data, /* TODO mudar isso*/0) != 0) {
+    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, wav_data, (int)(header->Subchunk2Size) * (int)(header->NumOfChan) ) != 0) {
         printf("\nNão foi possível salvar o arquivo codificado\n");
 
         free(header);
         free(wav_data);
+        free(samples);
 
         return -1;
     }
 
     free(header);
     free(wav_data);
+    free(samples);
 
     return 0;
 }
@@ -91,4 +107,27 @@ int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr
     fwrite((void*)data, data_size*sizeof(int8_t), 1, f);
 
     fclose(f);
+}
+
+int obtainSamples(wav_hdr *header, int8_t *data, int32_t *samples) {
+    int samples_size = (header->Subchunk2Size * 8)/header->bitsPerSample;
+
+    samples = (int32_t*)malloc(samples_size * sizeof(int32_t));
+
+    if(samples == 0) {
+        return -1;
+    }
+
+    int i;
+    int j;
+    int count = 0;
+    for(i = 0; i < header->Subchunk2Size; i += (header->bitsPerSample/8) ) {
+        samples[count] = 0;
+
+        for(j = 0; j < header->bitsPerSample/8; j++) {
+            samples[count] += (data[i+j] << ( (header->bitsPerSample/8) - j - 1) * 8 );
+        }
+
+        count += 1;
+    }
 }
