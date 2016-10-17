@@ -1,6 +1,12 @@
+#ifndef _BITVECTOR_H_
+#define _BITVECTOR_H_
+
 #include "stdlib.h"
 #include "stdint.h"
 #include "stdio.h"
+
+#define true 1
+#define false 0
 
 typedef struct bvector{
 	uint8_t * content;
@@ -18,3 +24,7 @@ int bv_get(bitvector * bv, int pos);
 void bv_free(bitvector * bv);
 
 bitvector * bv_copy(bitvector * bv);
+
+void bv_print(bitvector * bv);
+
+#endif

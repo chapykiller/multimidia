@@ -1,9 +1,62 @@
 #include "huffman.h"
 
-hftree * readTree(){
-	hftree localTree;
+hfnode * readTree(bitvector * bv, int * current, int bitsperword){
+	hfnode * newnode = (hfnode *)malloc(1*sizeof(hfnode));
 
-	
+	if(bv_get(bv, *current)==0){
+		// Nó não-folha
+		(*current)++;
+
+		newnode->isLeaf = false;
+		newnode->children = (hfnode **)malloc(2*sizeof(hfnode *));
+
+		newnode->frequency = 0;
+		newnode->data = 0;
+		newnode->prefix = NULL;
+
+		newnode->children[0] = readTree(bv, current, bitsperword);
+		newnode->children[1] = readTree(bv, current, bitsperword);
+
+		return newnode;
+	}else{
+		// Nó folha
+		(*current)++;
+
+		newnode->isLeaf = true;
+		newnode->children = NULL;
+
+		newnode->frequency = 0;
+		newnode->data = 0;
+		newnode->prefix = NULL;
+
+		int i;
+
+		for(i=0; i<bitsperword; i++){
+			newnode->data = (newnode->data << 1) + bv_get(bv, (*current));
+			(*current)++;
+		}
+
+		return newnode;
+	}
+}
+
+void writeTree(bitvector * bv, hfnode * node, int bitsperword){
+	if(node->isLeaf){
+		bv_push(bv, 1);
+
+		int i;
+		for(i=bitsperword-1; i>=0; i--)
+			bv_push(bv, (node->data>>i)&1);
+
+		return;
+	}else{
+		bv_push(bv, 0);
+
+		writeTree(bv, node->children[0], bitsperword);
+		writeTree(bv, node->children[1], bitsperword);
+
+		return;
+	}
 }
 
 hftree * buildTree(int * data, int datalength){
@@ -63,13 +116,14 @@ hftree * buildTree(int * data, int datalength){
 		}
 
  		// E podemos atualizar seu tamanho
-		datalength = bufferlength;
+		locallength = bufferlength;
 
 		hfnode * newNode = (hfnode *)malloc(1*sizeof(hfnode));
 		newNode->isLeaf = 1;
 		newNode->data = currentcode;
 		newNode->frequency = codefrequency;
 		newNode->children = NULL;
+		newNode->prefix = NULL;
 
 		nodeamount++;
 
@@ -95,6 +149,10 @@ hftree * buildTree(int * data, int datalength){
 		newNode->children[0] = hfnodes[0];
 		newNode->children[1] = hfnodes[1];
 
+		newNode->prefix = NULL;
+		newNode->frequency = 0;
+		newNode->data = 0;
+
 		hfnodes[0] = newNode;
 		hfnodes[1] = hfnodes[nodeamount-1];
 
@@ -105,16 +163,43 @@ hftree * buildTree(int * data, int datalength){
 
 	localTree->root = hfnodes[0];
 
+	free(hfnodes);
+
 	return localTree;
 }
 
-int * readHuffmanData(hftree * tree, int * data, int datasize){
+int * readHuffmanData(int * data, int datasize, int * retsizeparam){
 	// Vetor de retorno
 	int * ret=malloc(1*sizeof(int));
 
-	// wordi se refere a word (int) do input sobre a qual estamos
-	// iterando atualmente. biti se refere ao bit da palavra. 
-	int wordi, biti;
+	// Colocamos os dados no formato de um vetor de bits para
+	// facilitar a lógica do programa
+	bitvector * bitdata = bv_new();
+
+	int i, j;
+
+	// for(i=0; i<datasize; i++)
+	// 	for(j=31; j>=0; j--)
+	// 		bv_push(bitdata, (data[i]>>j) & 1);
+	{
+		int bitcount = datasize*32 - 64 + data[datasize-1];
+
+		for(i=0; i<bitcount; i++)
+			bv_push(bitdata, (data[i/32]>>(31-i%32)) & 1);
+	}
+
+	int currentbit;
+
+	// Primeiro devemos ler o número de bits per word para poder
+	// ler a árvore de huffman corretamente
+	int bitsperword = 0;
+
+	for(currentbit=0; currentbit<6; currentbit++){
+		bitsperword = (bitsperword << 1) + bv_get(bitdata, currentbit);
+	}
+
+	// Logo a seguir lemos a árvore de huffman
+	hfnode * root = readTree(bitdata, &currentbit, bitsperword);
 
 	// retpos se refere a ultima posição não preenchida no vetor de
 	// retorno. retsize se refere ao tamanho atual do vetor de retorno.
@@ -123,46 +208,101 @@ int * readHuffmanData(hftree * tree, int * data, int datasize){
 	int retsize = 1;
 
 	// Nó atual no qual estamos
-	hfnode * currentNode = tree->root;
+	hfnode * currentNode = root;
 
-	for(wordi=0; wordi<datasize; wordi++){
-		for(biti=31; biti>=0; biti--){
-			int bit = (data[wordi] >> biti) & 1;
+	for(; currentbit<bitdata->bitamount; currentbit++){
+		int bit = bv_get(bitdata, currentbit);
 
-			currentNode = currentNode->children[bit];
+		currentNode = currentNode->children[bit];
 
-			if(currentNode->isLeaf){
-				if(retpos==retsize){
-					// Caso não haja mais espaço no vetor, então
-					// dobramos sua capacidade
+		if(currentNode->isLeaf){
+			if(retpos==retsize){
+				// Caso não haja mais espaço no vetor, então
+				// dobramos sua capacidade
 
-					retsize *= 2;
-					ret = realloc(ret, retsize*sizeof(int));
-				}
-
-				// Adicionando o novo elemento no vetor de retorno
-				ret[retpos] = currentNode->data;
-				retpos++;
-
-				// Ao chegar a um nó folha, devemos retornar ao nó raiz
-				currentNode = tree->root;
+				retsize *= 2;
+				ret = realloc(ret, retsize*sizeof(int));
 			}
+
+			// Adicionando o novo elemento no vetor de retorno
+			ret[retpos] = currentNode->data;
+			retpos++;
+
+			// Ao chegar a um nó folha, devemos retornar ao nó raiz
+			currentNode = root;
 		}
 	}
+
+	bv_free(bitdata);
+	freeHuffmanTree(root);
+
+	(*retsizeparam) = retpos;
 
 	return ret;
 }
 
-int * writeHuffmanData(hftree * tree){
-	// Vetor de retorno
-	int * ret = (int *)malloc(1*sizeof(int));
+int * writeHuffmanData(int * data, int datasize, int * retsize){
+	int i, j;
 
-	// wordo representa a word atual na qual estamos
-	// armazenando bits, enquanto bito representa o bit
-	// atual
-	int wordo=0, bito=31;
+	// Máximo numero de bits necessários para representar
+	// qualquer dado
+	int maxbits = 0;
 
+	// Encontrando o bit mais significativo não-zero entre todos os códigos dos dados
+	for(i=0; i<datasize; i++){
+		int bitreq = getBitAmount(data[i]);
 
+		if(bitreq > maxbits)
+			maxbits = bitreq;
+	}
+
+	// Vector de bits para guardar o output
+	bitvector * output = bv_new();
+
+	// No passo de compressão de huffman, a primeira coisa a ser
+	// guardada é mínimo número de bits necessários para gravar
+	// todos os códigos
+	for(i=5; i>=0; i--)
+		bv_push(output, (maxbits>>i)&1);
+
+	// O segundo passo é construir e armazenar a árvore de huffman
+	hftree * tree = buildTree(data, datasize);
+	writeTree(output, tree->root, maxbits);
+
+	// O terceiro passo é construir os prefixos de cada código
+	int nodespacelength;
+	hfnode ** nodespace = buildHuffmanMap(tree->root, &nodespacelength, NULL);
+
+	// E então colocamos os códigos no bitvector de retorno
+	for(i=0; i<datasize; i++){
+		int codepos = findHuffmanCode(nodespace, 0, nodespacelength-1, data[i]);
+
+		for(j=0; j<nodespace[codepos]->prefix->bitamount; j++)
+			bv_push(output, bv_get(nodespace[codepos]->prefix, j) );
+	}
+
+	{
+		int intamount = (output->bitamount/32 + 2);
+		int * ret = (int *)malloc(intamount*sizeof(int));
+
+		for(i=0; i<output->bitamount; i++){
+			if(i%32==0)
+				ret[i/32] = 0;
+
+			ret[i/32] = ret[i/32] + (bv_get(output, i)<<(31-i%32));
+		}
+
+		ret[intamount-1] = output->bitamount % 32;
+
+		bv_free(output);
+		freeHuffmanTree(tree->root);
+
+		free(tree);
+		free(nodespace);
+
+		(*retsize) = intamount;
+		return ret;
+	}
 }
 
 void sortNodes(hfnode ** array, int arraysize){
@@ -184,6 +324,26 @@ void sortNodes(hfnode ** array, int arraysize){
 	}
 
 	return;
+}
+
+int findHuffmanCode(hfnode ** vector, int min, int max, int value){
+	if(min>=max)
+		if(vector[min]->data == value)
+			return min;
+		else{
+			printf("ERROR: unable to find correct code (findHuffmanCode)\n");
+			exit(EXIT_FAILURE);
+		}
+
+	int middle = (min+max)/2;
+
+	if( value < vector[middle]->data ){
+		return findHuffmanCode(vector, min, middle-1, value);
+	}else if( value > vector[middle]->data ){
+		return findHuffmanCode(vector, middle+1, max, value);
+	}else{
+		return middle;
+	}
 }
 
 hfnode ** buildHuffmanMap(hfnode * node, int * returnsize, bitvector * prefix){
@@ -247,12 +407,43 @@ hfnode ** buildHuffmanMap(hfnode * node, int * returnsize, bitvector * prefix){
 		free(mapB);
 
 		if(isRoot)
-			free(prefix);
+			bv_free(prefix);
 
-		free(prefixA);
-		free(prefixB);
+		bv_free(prefixA);
+		bv_free(prefixB);
 
 		*returnsize = mapCsize;
 		return returnMap;
+	}
+}
+
+void freeHuffmanTree(hfnode * node){
+	if(node->isLeaf){
+		if(node->children != NULL){
+			printf("ERROR: Leaf node's children is not null pointer (freeHuffmanTree)\n");
+			exit(EXIT_FAILURE);
+		}
+
+		if(node->prefix != NULL)
+			bv_free(node->prefix);
+		free(node);
+
+		return;
+	}else{
+		if(node->children == NULL){
+			printf("ERROR: Non leaf node's children is null pointer (freeHuffmanTree)\n");
+			exit(EXIT_FAILURE);
+		}
+
+		if(node->prefix != NULL)
+			bv_free(node->prefix);
+
+		freeHuffmanTree(node->children[0]);
+		freeHuffmanTree(node->children[1]);
+
+		free(node->children);
+		free(node);
+
+		return;
 	}
 }

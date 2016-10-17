@@ -31,10 +31,13 @@ void bv_push(bitvector * bv, uint8_t bit){
 	int currentbyte = bv->bitamount/8;
 
 	// Limpando o bit antigo
-	bv->content[currentbyte] = bv->content[currentbyte] & (~((uint8_t)1)<<(bv->bitamount%8));
+	bv->content[currentbyte] = bv->content[currentbyte] & (~(((uint8_t)1)<<(bv->bitamount%8)));
 
 	// Inserindo o novo bit
 	bv->content[currentbyte] = bv->content[currentbyte] | (bit << (bv->bitamount%8));
+
+	// Incrementando o contador de bits
+	bv->bitamount++;
 
 	return;
 }
@@ -51,6 +54,8 @@ int bv_get(bitvector * bv, int pos){
 	}
 
 	int currentbyte = pos/8;
+
+	// printf("Retrieving: %2x\n", bv->content[currentbyte]);
 
 	return (bv->content[currentbyte] >> (pos%8)) & 0x1;
 }
@@ -71,11 +76,25 @@ bitvector * bv_copy(bitvector * bv){
 	newbv->bitamount = bv->bitamount;
 	newbv->byteamount = bv->byteamount;
 
-	newbv->content = (uint8_t *)malloc(newbv->byteamount*sizeof(uint8_t));
-
-	for(i=0; i<bv->bitamount; i++){
-		bv_push(newbv, bv_get(bv, i));
+	if(bv->content != NULL){
+		newbv->content = (uint8_t *)malloc(newbv->byteamount*sizeof(uint8_t));
+	
+		for(i=0; i<bv->byteamount; i++){
+			newbv->content[i] = bv->content[i];
+		}
+	}else{
+		newbv->content = NULL;
 	}
 
 	return newbv;
+}
+
+void bv_print(bitvector * bv){
+	int i;
+
+	for(i=0; i<bv->bitamount; i++){
+		printf("%d", bv_get(bv, i));
+	}
+
+	return;
 }
