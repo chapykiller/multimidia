@@ -64,18 +64,26 @@ int main(int argc, char *argv[]) {
 
     samples_size = obtainSamples(header, wav_data, samples);
 
+    if(samples_size < 0) {
+        free(header);
+        free(wav_data);
+        return -1;
+    }
+
     // Salva o arquivo codificado
     if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, wav_data, (int)(header->Subchunk2Size) * (int)(header->NumOfChan) ) != 0) {
         printf("\nNão foi possível salvar o arquivo codificado\n");
 
         free(header);
         free(wav_data);
+        free(samples);
 
         return -1;
     }
 
     free(header);
     free(wav_data);
+    free(samples);
 
     return 0;
 }
@@ -105,6 +113,10 @@ int obtainSamples(wav_hdr *header, int8_t *data, int32_t *samples) {
     int samples_size = (header->Subchunk2Size * 8)/header->bitsPerSample;
 
     samples = (int32_t*)malloc(samples_size * sizeof(int32_t));
+
+    if(samples == 0) {
+        return -1;
+    }
 
     int i;
     int j;
