@@ -9,7 +9,7 @@
 #include "huffman.h"
 #include "auxiliary.h"
 
-int saveFile(char *filename, int difference, int runlength, int huffman, int blockSize, wav_hdr* header, int32_t *data, int data_size);
+int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size);
 
 int32_t* obtainSamples(wav_hdr *header, int8_t *data, int *samples_size);
 
@@ -114,28 +114,42 @@ int main(int argc, char *argv[]) {
         samples_size = newSize;
     }
 
-    // TODO shortenBytes();
+    int8_t *shortenedSamples;
+    int newSize;
+
+    shortenedSamples = shortenBytes(samples, samples_size, &newSize);
+
+    if(shortenedSamples == 0) {
+        free(samples);
+        free(header);
+        free(wav_data);
+
+        return -1;
+    }
+
+    free(samples);
+    samples_size = newSize;
 
     // Salva o arquivo codificado
-    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, /* TODO */0, header, samples, (int)(header->Subchunk2Size) * (int)(header->NumOfChan) ) != 0) {
+    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, shortenedSamples, samples_size ) != 0) {
         printf("\nNão foi possível salvar o arquivo codificado\n");
 
         free(header);
         free(wav_data);
-        free(samples);
+        free(shortenedSamples);
 
         return -1;
     }
 
     free(header);
     free(wav_data);
-    free(samples);
+    free(shortenedSamples);
 
     return 0;
 }
 
 // Salva o arquivo codificado
-int saveFile(char *filename, int difference, int runlength, int huffman, int blockSize, wav_hdr* header, int32_t *data, int data_size) {
+int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size) {
     FILE *f;
 
     f = fopen(filename, "w");
@@ -147,16 +161,16 @@ int saveFile(char *filename, int difference, int runlength, int huffman, int blo
     // Gerando o cabeçalho
     int8_t codHeader = 0;
     codHeader = (int8_t)(( (difference<<2) + (runlength<<1) + (huffman<<0) ) << 5);
-    codHeader += (int8_t)blockSize;
 
     // Salva o nosso cabeçalho
     fwrite((void*)&codHeader, sizeof(int8_t), 1, f);
+    fwrite((void*)&data_size, sizeof(int), 1, f);
 
     // Salva o cabeçalho do wave
     fwrite((void*)header, sizeof(wav_hdr), 1, f);
 
     // Salva os dados codificados
-    fwrite((void*)data, data_size*sizeof(int32_t), 1, f);
+    fwrite((void*)data, data_size*sizeof(int8_t), 1, f);
 
     fclose(f);
 
