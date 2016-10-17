@@ -5,7 +5,7 @@
 
 #include "wave_reader.h"
 
-int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int32_t *data, int data_size);
+int saveFile(char *filename, int difference, int runlength, int huffman, int blockSize, wav_hdr* header, int32_t *data, int data_size);
 
 int32_t* obtainSamples(wav_hdr *header, int8_t *data, int *samples_size);
 
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int32_t *data, int data_size) {
+int saveFile(char *filename, int difference, int runlength, int huffman, int blockSize, wav_hdr* header, int32_t *data, int data_size) {
     FILE *f;
 
     f = fopen(filename, "w");
@@ -99,6 +99,7 @@ int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr
 
     int8_t codHeader = 0;
     codHeader = (int8_t)(( (difference<<2) + (runlength<<1) + (huffman<<0) ) << 5);
+    codHeader += (int8_t)blockSize;
 
     fwrite((void*)&codHeader, sizeof(int8_t), 1, f);
 

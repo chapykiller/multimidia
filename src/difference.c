@@ -52,7 +52,7 @@ int32_t* differenceEncode(int32_t *orig, int orig_size, int *dest_size) {
     int blockMask = ~(-1 << numBits);
 
     for(i = 0; i < numBlocks; i++) {
-        int value = aux[0] << ( (numBlocks - i -1) * numBits );
+        int value = aux[0] >> ( (numBlocks - i -1) * numBits );
         dest[2 + i] = value & blockMask;
     }
 
