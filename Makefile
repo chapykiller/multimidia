@@ -5,13 +5,14 @@ PROGRAM1 = encode
 PROGRAM2 = decode
 
 CFLAGS = -I./include
+lib= -lm
 CXX = gcc
 
-SRC1 = $(SRCDIR)/encode.c $(SRCDIR)/wave_reader.c $(SRCDIR)/bitvector.c  $(SRCDIR)/huffman.c 
+SRC1 = $(SRCDIR)/encode.c $(SRCDIR)/wave_reader.c $(SRCDIR)/bitvector.c  $(SRCDIR)/huffman.c $(SRCDIR)/difference.c
 OBJ1 = $(SRC1:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 DEP1 = $(OBJ1:.o=.d)
 
-SRC2 = $(SRCDIR)/decode.c $(SRCDIR)/wave_reader.c $(SRCDIR)/bitvector.c  $(SRCDIR)/huffman.c 
+SRC2 = $(SRCDIR)/decode.c $(SRCDIR)/wave_reader.c $(SRCDIR)/bitvector.c  $(SRCDIR)/huffman.c $(SRCDIR)/difference.c
 OBJ2 = $(SRC2:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 DEP2 = $(OBJ2:.o=.d)
 
@@ -28,10 +29,10 @@ obj/:
 	mkdir -p obj/
 
 bin/$(PROGRAM1): $(OBJ1)
-	$(CXX) $^ -o $@
+	$(CXX) $^ -o $@ $(lib)
 
 bin/$(PROGRAM2): $(OBJ2)
-	$(CXX) $^ -o $@
+	$(CXX) $^ -o $@ $(lib)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CXX) $(CFLAGS) -o $@ -c $<

@@ -5,9 +5,9 @@
 
 #include "wave_reader.h"
 
-int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size);
+int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int32_t *data, int data_size);
 
-int obtainSamples(wav_hdr* header, int8_t *data, int32_t *samples);
+int32_t* obtainSamples(wav_hdr *header, int8_t *data, int *samples_size);
 
 int main(int argc, char *argv[]) {
     if(argc < 3) {
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     int8_t *wav_data;
     wav_hdr* header;
 
-    header = readWave(filenames[0], wav_data);
+    header = readWave(filenames[0], &wav_data);
     if(header == 0) {
         return -1;
     }
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     int32_t *samples;
     int samples_size;
 
-    samples_size = obtainSamples(header, wav_data, samples);
+    samples = obtainSamples(header, wav_data, &samples_size);
 
     if(samples_size < 0) {
         free(header);
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Salva o arquivo codificado
-    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, wav_data, (int)(header->Subchunk2Size) * (int)(header->NumOfChan) ) != 0) {
+    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, samples, (int)(header->Subchunk2Size) * (int)(header->NumOfChan) ) != 0) {
         printf("\nNão foi possível salvar o arquivo codificado\n");
 
         free(header);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size) {
+int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int32_t *data, int data_size) {
     FILE *f;
 
     f = fopen(filename, "w");
@@ -104,18 +104,20 @@ int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr
 
     fwrite((void*)header, sizeof(wav_hdr), 1, f);
 
-    fwrite((void*)data, data_size*sizeof(int8_t), 1, f);
+    fwrite((void*)data, data_size*sizeof(int32_t), 1, f);
 
     fclose(f);
+
+    return 0;
 }
 
-int obtainSamples(wav_hdr *header, int8_t *data, int32_t *samples) {
-    int samples_size = (header->Subchunk2Size * 8)/header->bitsPerSample;
+int32_t* obtainSamples(wav_hdr *header, int8_t *data, int *samples_size) {
+    *samples_size = (header->Subchunk2Size * 8)/header->bitsPerSample;
 
-    samples = (int32_t*)malloc(samples_size * sizeof(int32_t));
+    int32_t *samples = (int32_t*)malloc(*samples_size * sizeof(int32_t));
 
     if(samples == 0) {
-        return -1;
+        return 0;
     }
 
     int i;
@@ -130,4 +132,6 @@ int obtainSamples(wav_hdr *header, int8_t *data, int32_t *samples) {
 
         count += 1;
     }
+
+    return samples;
 }
