@@ -3,9 +3,13 @@
 #include <stdlib.h>
 
 #include "difference.h"
+#include "auxiliary.h"
 
+// Codifica usando diferenças
 int32_t* differenceEncode(int32_t *orig, int orig_size, int *dest_size) {
+    // Menor valor (usado para tirar os valores negativos das diferenças)
     int32_t minimum;
+    // Número de bits necessário para representar o maior valor
     int numBits;
     int32_t *dest;
 
@@ -18,7 +22,7 @@ int32_t* differenceEncode(int32_t *orig, int orig_size, int *dest_size) {
     // Faz as diferenças
     int i;
     for(i = 0; i < orig_size; i++) {
-        aux[i] = (i == 0) ? orig[i] : orig[i] - aux[i-1];
+        aux[i] = (i == 0) ? orig[i] : orig[i] - orig[i-1];
     }
 
     // Encontra o menor valor
@@ -34,7 +38,7 @@ int32_t* differenceEncode(int32_t *orig, int orig_size, int *dest_size) {
         max = (aux[i] > max) ? aux[i] : max;
     }
 
-    // TODO numBits = getNumBits(max);
+    numBits = getBitAmount(max);
     int numBlocks = ceil((double)32.0/(double)numBits);
 
     *dest_size = orig_size - 1 + numBlocks + 2;
@@ -45,10 +49,12 @@ int32_t* differenceEncode(int32_t *orig, int orig_size, int *dest_size) {
         return 0;
     }
 
+    // Salva os dados necessários para decodificação
     dest[0] = numBits;
     dest[1] = abs(minimum) << 1;
     dest[1] = (minimum < 0) ? dest[1] + 1 : dest[1];
 
+    // Divide a primeira amostra em numBlocks blocos de numBits bits
     int blockMask = ~(-1 << numBits);
 
     for(i = 0; i < numBlocks; i++) {
@@ -67,6 +73,7 @@ int32_t* differenceEncode(int32_t *orig, int orig_size, int *dest_size) {
     return dest;
 }
 
+// Decodifica por diferenças
 int32_t* differenceDecode(int32_t *orig, int orig_size, int *dest_size) {
     int numBits, minimum;
     int32_t *dest;

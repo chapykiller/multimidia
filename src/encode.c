@@ -4,17 +4,22 @@
 #include <stdint.h>
 
 #include "wave_reader.h"
+#include "difference.h"
+#include "runlength.h"
+#include "huffman.h"
 
 int saveFile(char *filename, int difference, int runlength, int huffman, int blockSize, wav_hdr* header, int32_t *data, int data_size);
 
 int32_t* obtainSamples(wav_hdr *header, int8_t *data, int *samples_size);
 
 int main(int argc, char *argv[]) {
-    if(argc < 3) {
+    // Precisa ter pelo menos 3 argumentos junto com o nome do programa
+    if(argc < 4) {
         printf("\nPoucos argumentos\n");
         return -1;
     }
 
+    // Se houver mais do que 5 argumentos além do nome do programa
     if(argc > 6) {
         printf("\nMuitos argumentos\n");
         return -1;
@@ -24,6 +29,7 @@ int main(int argc, char *argv[]) {
     int bDifference, bRunlength, bHuffman;
     bDifference = bRunlength = bHuffman = 0;
 
+    // Filenames[0] é o nome do arquivo de origem e filenames[1] é o nome do arquivo de destino
     char filenames[2][50];
     filenames[0][0] = filenames[1][0] = '\0';
 
@@ -50,6 +56,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    if(bHuffman == 0 && bDifference == 0 && bRunlength == 0) {
+        printf("\nPelo menos uma das opções de codificação deve ser passada.\n");
+        return -1;
+    }
+
     // Lê o arquivo wave que será codificado
     int8_t *wav_data;
     wav_hdr* header;
@@ -62,6 +73,7 @@ int main(int argc, char *argv[]) {
     int32_t *samples;
     int samples_size;
 
+    // Separa os bytes lidos em amostras de no máximo 32 bits
     samples = obtainSamples(header, wav_data, &samples_size);
 
     if(samples_size < 0) {
@@ -69,6 +81,38 @@ int main(int argc, char *argv[]) {
         free(wav_data);
         return -1;
     }
+
+    if(bDifference == 1) {
+        int newSize;
+        int32_t *newSamples = differenceEncode(samples, samples_size, &newSize);
+
+        free(samples);
+
+        samples = newSamples;
+        samples_size = newSize;
+    }
+
+    if(bRunlength == 1) {
+        int newSize;
+        int32_t *newSamples = writeRunlength(samples, samples_size, &newSize);
+
+        free(samples);
+
+        samples = newSamples;
+        samples_size = newSize;
+    }
+
+    if(bHuffman == 1) {
+        int newSize;
+        int32_t *newSamples = writeHuffmanData(samples, samples_size, &newSize);
+
+        free(samples);
+
+        samples = newSamples;
+        samples_size = newSize;
+    }
+
+    // TODO shortenBytes();
 
     // Salva o arquivo codificado
     if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, /* TODO */0, header, samples, (int)(header->Subchunk2Size) * (int)(header->NumOfChan) ) != 0) {
@@ -88,6 +132,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+// Salva o arquivo codificado
 int saveFile(char *filename, int difference, int runlength, int huffman, int blockSize, wav_hdr* header, int32_t *data, int data_size) {
     FILE *f;
 
@@ -97,14 +142,18 @@ int saveFile(char *filename, int difference, int runlength, int huffman, int blo
 		return -1;
 	}
 
+    // Gerando o cabeçalho
     int8_t codHeader = 0;
     codHeader = (int8_t)(( (difference<<2) + (runlength<<1) + (huffman<<0) ) << 5);
     codHeader += (int8_t)blockSize;
 
+    // Salva o nosso cabeçalho
     fwrite((void*)&codHeader, sizeof(int8_t), 1, f);
 
+    // Salva o cabeçalho do wave
     fwrite((void*)header, sizeof(wav_hdr), 1, f);
 
+    // Salva os dados codificados
     fwrite((void*)data, data_size*sizeof(int32_t), 1, f);
 
     fclose(f);
@@ -112,6 +161,7 @@ int saveFile(char *filename, int difference, int runlength, int huffman, int blo
     return 0;
 }
 
+// Junta os bytes em um único int32_t com base na quantidade de bits por amostra
 int32_t* obtainSamples(wav_hdr *header, int8_t *data, int *samples_size) {
     *samples_size = (header->Subchunk2Size * 8)/header->bitsPerSample;
 
