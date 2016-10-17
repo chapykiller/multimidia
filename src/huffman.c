@@ -1,8 +1,10 @@
 #include "huffman.h"
 
 hfnode * readTree(bitvector * bv, int * current, int bitsperword){
+	// Primeiro instanciamos o nó que encontramos
 	hfnode * newnode = (hfnode *)malloc(1*sizeof(hfnode));
 
+	// Se lermos um zero, se trata de um nó não folha
 	if(bv_get(bv, *current)==0){
 		// Nó não-folha
 		(*current)++;
@@ -14,9 +16,12 @@ hfnode * readTree(bitvector * bv, int * current, int bitsperword){
 		newnode->data = 0;
 		newnode->prefix = NULL;
 
+		// Para o caso do nó não folha devemos ler primeiro o nó filho
+		// esquerdo e depois o direito
 		newnode->children[0] = readTree(bv, current, bitsperword);
 		newnode->children[1] = readTree(bv, current, bitsperword);
 
+		// E em seguida retornamos o nó.
 		return newnode;
 	}else{
 		// Nó folha
@@ -31,27 +36,33 @@ hfnode * readTree(bitvector * bv, int * current, int bitsperword){
 
 		int i;
 
+		// Lemos seu código e atribuímos ao nó
 		for(i=0; i<bitsperword; i++){
 			newnode->data = (newnode->data << 1) + bv_get(bv, (*current));
 			(*current)++;
 		}
 
+		// Retornamos o nó.
 		return newnode;
 	}
 }
 
 void writeTree(bitvector * bv, hfnode * node, int bitsperword){
 	if(node->isLeaf){
+		// Se o nó for folha, colocamos um 1 na saída para indicar isso
 		bv_push(bv, 1);
 
+		// E em seguida escrevemos seu código
 		int i;
 		for(i=bitsperword-1; i>=0; i--)
 			bv_push(bv, (node->data>>i)&1);
 
 		return;
 	}else{
+		// Se não for um nó folha, escrevemos um 0 na saída
 		bv_push(bv, 0);
 
+		// E então escrevemos os dados do nó filho esquerdo e depois do direito
 		writeTree(bv, node->children[0], bitsperword);
 		writeTree(bv, node->children[1], bitsperword);
 
@@ -118,6 +129,7 @@ hftree * buildTree(int * data, int datalength){
  		// E podemos atualizar seu tamanho
 		locallength = bufferlength;
 
+		// Então criamos o nó para guardar os um código e sua frequência
 		hfnode * newNode = (hfnode *)malloc(1*sizeof(hfnode));
 		newNode->isLeaf = 1;
 		newNode->data = currentcode;
@@ -125,6 +137,7 @@ hftree * buildTree(int * data, int datalength){
 		newNode->children = NULL;
 		newNode->prefix = NULL;
 
+		// E então inserimos no vetor de nós
 		nodeamount++;
 
 		if(hfnodes == NULL){
@@ -141,7 +154,12 @@ hftree * buildTree(int * data, int datalength){
 	free(localdata);
 	free(bufferdata);
 
+	// Agora construímos a árvore de Huffman:
 	while(nodeamount>1){
+		// Enquanto ainda houver mais de um nó no vetor, instanciamos um novo nó,
+		// o inserimos no vetor de nós, e então colocamos os dois nós com menor
+		// frequência como filhos deste novo nó.
+
 		hfnode * newNode = (hfnode *)malloc(1*sizeof(hfnode));
 		newNode->isLeaf = 0;
 		newNode->children = (hfnode **)malloc(2*sizeof(hfnode *));
@@ -150,7 +168,7 @@ hftree * buildTree(int * data, int datalength){
 		newNode->children[1] = hfnodes[1];
 
 		newNode->prefix = NULL;
-		newNode->frequency = 0;
+		newNode->frequency = newNode->children[0]->frequency + newNode->children[1]->frequency;
 		newNode->data = 0;
 
 		hfnodes[0] = newNode;
@@ -178,9 +196,6 @@ int * readHuffmanData(int * data, int datasize, int * retsizeparam){
 
 	int i, j;
 
-	// for(i=0; i<datasize; i++)
-	// 	for(j=31; j>=0; j--)
-	// 		bv_push(bitdata, (data[i]>>j) & 1);
 	{
 		int bitcount = datasize*32 - 64 + data[datasize-1];
 
@@ -282,6 +297,9 @@ int * writeHuffmanData(int * data, int datasize, int * retsize){
 	}
 
 	{
+		// Por fim, concatenamos todos os bits do bitvector de output
+		// para um vetor de inteiros, que é o que devemos retornar
+
 		int intamount = (output->bitamount/32 + 2);
 		int * ret = (int *)malloc(intamount*sizeof(int));
 
@@ -294,6 +312,7 @@ int * writeHuffmanData(int * data, int datasize, int * retsize){
 
 		ret[intamount-1] = output->bitamount % 32;
 
+		// Liberando memória do que não será mais usado
 		bv_free(output);
 		freeHuffmanTree(tree->root);
 
@@ -310,6 +329,8 @@ void sortNodes(hfnode ** array, int arraysize){
 
 	int correct=0;
 
+	// Algoritmo de BubbleSort para ordenar nós em um vetor
+	// de acordo com seus códigos
 	while(!correct){
 		correct = 1;
 		for(i=0; i<arraysize-1; i++){
@@ -327,6 +348,9 @@ void sortNodes(hfnode ** array, int arraysize){
 }
 
 int findHuffmanCode(hfnode ** vector, int min, int max, int value){
+	// Algoritmo de busca binária para encontrar a posição de um código num
+	// vetor ordenado de códigos, usado para encontrar o prefixo de um código
+
 	if(min>=max)
 		if(vector[min]->data == value)
 			return min;
@@ -347,7 +371,14 @@ int findHuffmanCode(hfnode ** vector, int min, int max, int value){
 }
 
 hfnode ** buildHuffmanMap(hfnode * node, int * returnsize, bitvector * prefix){
+	// Constrói um vetor ordenado de nós de uma árvore de Huffman de acordo com seus
+	// códigos, além de atribuir seus prefixos.
+
 	if(node->isLeaf){
+		// Se estivermos em um nó folha, basta atribuir o prefixo apropriado
+		// ao código, criar um vetor de um único elemento com o código do nó
+		// folha e retorná-lo
+
 		if(prefix == NULL){
 			printf("ERROR: prefix is null at leaf level (buildHuffmanMap)\n");
 			exit(EXIT_FAILURE);
@@ -365,24 +396,36 @@ hfnode ** buildHuffmanMap(hfnode * node, int * returnsize, bitvector * prefix){
 		*returnsize = 1;
 		return retmap;
 	}else{
+		// No caso de não ser um nó folha:
+
+		// Se prefix for NULL, devemos criar um prefixo vazio, que deverá
+		// ser desalocado mais tarde
 		int isRoot = 0;
 		if(prefix == NULL){
 			prefix = bv_new();
 			isRoot = 1;
 		}
 
+		// Para o nó filho da esquerda, devemos copiar o prefixo atual,
+		// acrescentar um 0 e construir o vetor de códigos apropriado
 		bitvector * prefixA = bv_copy(prefix);
 		bv_push(prefixA, 0);
 
 		int mapAsize;
 		hfnode ** mapA = buildHuffmanMap(node->children[0], &mapAsize, prefixA);
 
+		// Mesma coisa para o nó filho da direita, mas acrescentamos um
+		// 1 ao invés de um 0
 		bitvector * prefixB = bv_copy(prefix);
 		bv_push(prefixB, 1);
 
 		int mapBsize;
 		hfnode ** mapB = buildHuffmanMap(node->children[1], &mapBsize, prefixB);
 
+		// Em seguida juntamos os dois vetores de códigos e os ordenamos usando
+		// um algoritmo muito parecido com heapsort: pegamos gulosamente o menor
+		// elemento dos dois vetores e o colocamos em um terceiro vetor, até que
+		// todos os elementos dos dois vetores se esgotem
 		int i=0, j=0;
 
 		int mapCsize=0;
@@ -403,6 +446,7 @@ hfnode ** buildHuffmanMap(hfnode * node, int * returnsize, bitvector * prefix){
 			}
 		}
 
+		// Liberando memória
 		free(mapA);
 		free(mapB);
 
@@ -424,6 +468,7 @@ void freeHuffmanTree(hfnode * node){
 			exit(EXIT_FAILURE);
 		}
 
+		// Se for um nó folha, pode ser necessário liberar o prefixo do nó
 		if(node->prefix != NULL)
 			bv_free(node->prefix);
 		free(node);
@@ -435,9 +480,13 @@ void freeHuffmanTree(hfnode * node){
 			exit(EXIT_FAILURE);
 		}
 
+		// Se não for um nó folha mas por alguma razão o nó tiver um prefixo,
+		// então liberamos sua memória
 		if(node->prefix != NULL)
 			bv_free(node->prefix);
 
+		// Se o nó não é folha, então com certeza tem dois nós filhos, que devem
+		// ser liberados recursivamente
 		freeHuffmanTree(node->children[0]);
 		freeHuffmanTree(node->children[1]);
 
