@@ -7,12 +7,14 @@
 #include "difference.h"
 #include "runlength.h"
 #include "huffman.h"
+#include "auxiliary.h"
 
 int saveFile(char *filename, int difference, int runlength, int huffman, int blockSize, wav_hdr* header, int32_t *data, int data_size);
 
 int32_t* obtainSamples(wav_hdr *header, int8_t *data, int *samples_size);
 
 int main(int argc, char *argv[]) {
+
     // Precisa ter pelo menos 3 argumentos junto com o nome do programa
     if(argc < 4) {
         printf("\nPoucos argumentos\n");
