@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Salva o arquivo codificado
-    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, samples, (int)(header->Subchunk2Size) * (int)(header->NumOfChan) ) != 0) {
+    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, /* TODO */0, header, samples, (int)(header->Subchunk2Size) * (int)(header->NumOfChan) ) != 0) {
         printf("\nNão foi possível salvar o arquivo codificado\n");
 
         free(header);
