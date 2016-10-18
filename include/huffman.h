@@ -32,7 +32,7 @@ int * writeHuffmanData(int * data, int datasize, int * retsize);
 
 // Ordena os nós de uma árvore de Huffman que estão num vetor
 // de acordo com seus códigos
-void sortNodes(hfnode ** array, int arraysize);
+void sortNodes(hfnode ** array, int l, int r);
 
 // Constrói um vetor com os nós de huffman ordenado de acordo
 // com seus códigos

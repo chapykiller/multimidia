@@ -70,6 +70,18 @@ void writeTree(bitvector * bv, hfnode * node, int bitsperword){
 	}
 }
 
+void isSorted(hfnode ** array, int size){
+	int i;
+
+	for(i=0; i<size-1; i++){
+		if(array[i]->frequency > array[i+1]->frequency){
+			printf("\tNot sorted!\n");
+			return;
+		}
+	}
+	printf("\tSorted!\n");
+}
+
 hftree * buildTree(int * data, int datalength){
 	hftree * localTree = (hftree *)malloc(1*sizeof(hftree));
 
@@ -147,9 +159,10 @@ hftree * buildTree(int * data, int datalength){
 			hfnodes = (hfnode **)realloc(hfnodes, nodeamount*sizeof(hfnode *));
 			hfnodes[nodeamount-1] = newNode;
 
-			sortNodes(hfnodes, nodeamount);
 		}
 	}
+
+	sortNodes(hfnodes, 0, nodeamount-1);
 
 	free(localdata);
 	free(bufferdata);
@@ -176,7 +189,7 @@ hftree * buildTree(int * data, int datalength){
 
 		nodeamount--;
 
-		sortNodes(hfnodes, nodeamount);
+		sortNodes(hfnodes, 0, nodeamount-1);
 	}
 
 	localTree->root = hfnodes[0];
@@ -303,6 +316,8 @@ int * writeHuffmanData(int * data, int datasize, int * retsize){
 		int intamount = (output->bitamount/32 + 2);
 		int * ret = (int *)malloc(intamount*sizeof(int));
 
+		printf("%d->%d\n", datasize, intamount);
+
 		for(i=0; i<output->bitamount; i++){
 			if(i%32==0)
 				ret[i/32] = 0;
@@ -324,16 +339,38 @@ int * writeHuffmanData(int * data, int datasize, int * retsize){
 	}
 }
 
-void sortNodes(hfnode ** array, int arraysize){
-	int i;
+// void sort-Nodes(hfnode ** array, int arraysize){
+// 	int i;
 
+// 	int correct=0;
+
+// 	// Algoritmo de BubbleSort para ordenar nós em um vetor
+// 	// de acordo com seus códigos
+// 	while(!correct){
+// 		correct = 1;
+// 		for(i=0; i<arraysize-1; i++){
+// 			if(array[i]->frequency > array[i+1]->frequency){
+// 				hfnode * tmp = array[i];
+// 				array[i] = array[i+1];
+// 				array[i+1] = tmp;
+
+// 				correct=0;
+// 			}
+// 		}
+// 	}
+
+// 	return;
+// }
+
+void sortNodes(hfnode ** array, int l, int r){
 	int correct=0;
+	int i;
 
 	// Algoritmo de BubbleSort para ordenar nós em um vetor
 	// de acordo com seus códigos
 	while(!correct){
 		correct = 1;
-		for(i=0; i<arraysize-1; i++){
+		for(i=0; i<r-1+1; i++){
 			if(array[i]->frequency > array[i+1]->frequency){
 				hfnode * tmp = array[i];
 				array[i] = array[i+1];
