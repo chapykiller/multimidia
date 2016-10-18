@@ -81,6 +81,8 @@ int main(int argc, char *argv[]) {
     // Separa os bytes lidos em amostras de no máximo 32 bits
     samples = obtainSamples(header, wav_data, &samples_size);
 
+    printf("Sampling: %d elements\n", samples_size);
+
     if(samples_size < 0) {
         free(header);
         free(wav_data);
@@ -97,6 +99,8 @@ int main(int argc, char *argv[]) {
         samples_size = newSize;
     }
 
+    printf("Difference: %d elements\n", samples_size);
+
     if(bRunlength == 1) {
         int newSize;
         int32_t *newSamples = writeRunlength(samples, samples_size, &newSize);
@@ -107,6 +111,8 @@ int main(int argc, char *argv[]) {
         samples_size = newSize;
     }
 
+    printf("Runlength: %d elements\n", samples_size);
+
     if(bHuffman == 1) {
         int newSize;
         int32_t *newSamples = writeHuffmanData(samples, samples_size, &newSize);
@@ -116,6 +122,17 @@ int main(int argc, char *argv[]) {
         samples = newSamples;
         samples_size = newSize;
     }
+
+    // printBits(samples, samples_size);
+
+    printf("Huffman: %d elements\n", samples_size);
+
+    // {
+    //     int retsize;
+    //     int * t = readHuffmanData(samples, samples_size, &retsize);
+
+    //     printf("\tHuffman: %d -> %d\n", samples_size, retsize);
+    // }
 
     int8_t *shortenedSamples;
     int newSize;
@@ -132,6 +149,8 @@ int main(int argc, char *argv[]) {
 
     free(samples);
     samples_size = newSize;
+    
+    printf("Shortened: %d elements\n", samples_size);
 
     // Salva o arquivo codificado
     if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, shortenedSamples, samples_size ) != 0) {

@@ -55,6 +55,8 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    printf("Preshorten: %d elements\n", samples_size);
+
     int32_t *samples;
     int new_size;
 
@@ -69,6 +71,10 @@ int main(int argc, char *argv[]) {
     free(shortenedSamples);
     samples_size = new_size;
 
+    printf("Prehuffman: %d elements\n", samples_size);
+
+    // printBits(samples, samples_size);
+
     if(bHuffman == 1) {
         int newSize;
         int32_t *newSamples = readHuffmanData(samples, samples_size, &newSize);
@@ -78,6 +84,8 @@ int main(int argc, char *argv[]) {
         samples = newSamples;
         samples_size = newSize;
     }
+
+    printf("Prerunlength: %d elements\n", samples_size);
 
     if(bRunlength == 1) {
         int newSize;
@@ -89,6 +97,8 @@ int main(int argc, char *argv[]) {
         samples_size = newSize;
     }
 
+    printf("Predifference: %d elements\n", samples_size);
+
     if(bDifference == 1) {
         int newSize;
         int32_t *newSamples = differenceDecode(samples, samples_size, &newSize);
@@ -98,6 +108,8 @@ int main(int argc, char *argv[]) {
         samples = newSamples;
         samples_size = newSize;
     }
+
+    printf("Final: %d elements\n", samples_size);
 
     // Separa as amostras em bytes
     int8_t *wav_data = obtainBytes(header, samples);
@@ -164,9 +176,9 @@ wav_hdr* readFile(char *filename, int *difference, int *runlength, int *huffman,
     // Lê os dados codificados
     fread(*data, (*data_size)*sizeof(int8_t), 1, f);
 
-    *difference = (int)(codHeader & 0b10000000);
-    *runlength = (int)(codHeader & 0b01000000);
-    *huffman = (int)(codHeader & 0b00100000);
+    *difference = (int)(codHeader & 0b10000000)!=0;
+    *runlength = (int)(codHeader & 0b01000000)!=0;
+    *huffman = (int)(codHeader & 0b00100000)!=0;
 
     fclose(f);
 

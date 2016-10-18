@@ -210,7 +210,11 @@ int * readHuffmanData(int * data, int datasize, int * retsizeparam){
 	int i, j;
 
 	{
-		int bitcount = datasize*32 - 64 + data[datasize-1];
+		int excessbits = data[datasize-1];
+		if(excessbits==0)
+			excessbits=32;
+
+		int bitcount = datasize*32 - 64 + excessbits;
 
 		for(i=0; i<bitcount; i++)
 			bv_push(bitdata, (data[i/32]>>(31-i%32)) & 1);
@@ -265,7 +269,6 @@ int * readHuffmanData(int * data, int datasize, int * retsizeparam){
 	freeHuffmanTree(root);
 
 	(*retsizeparam) = retpos;
-
 	return ret;
 }
 
@@ -313,10 +316,8 @@ int * writeHuffmanData(int * data, int datasize, int * retsize){
 		// Por fim, concatenamos todos os bits do bitvector de output
 		// para um vetor de inteiros, que é o que devemos retornar
 
-		int intamount = (output->bitamount/32 + 2);
+		int intamount = (output->bitamount + 32 - 1)/32 + 1; // (output->bitamount/32 + 2);
 		int * ret = (int *)malloc(intamount*sizeof(int));
-
-		printf("%d->%d\n", datasize, intamount);
 
 		for(i=0; i<output->bitamount; i++){
 			if(i%32==0)

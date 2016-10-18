@@ -64,8 +64,12 @@ int32_t * unshortenBytes(int8_t * data, int datasize, int * retsize){
 	// Separa o header e extrai seus dados
 	int8_t headerbyte = data[0];
 
+	int excessbits = ((headerbyte & 0xE0)>>5);
+	if(excessbits==0)
+		excessbits = 8;
+
 	int bitsperword = (headerbyte & 0x1F)+1;
-	int totalbits = datasize*8 - 8 + ((headerbyte & 0xE0)>>5);
+	int totalbits = datasize*8 - 8 + excessbits;
 
 	// Calcula o tamanho do vetor de retorno
 	int intcount = (totalbits-8)/bitsperword;
@@ -100,4 +104,15 @@ int32_t * unshortenBytes(int8_t * data, int datasize, int * retsize){
 
 	(*retsize) = intcount;
 	return ret;
+}
+
+void printBits(int * v, int size){
+	int i, j;
+
+	for(i=0; i<size; i++){
+		printf("%8x ", v[i]);
+
+		if(i%8==0)
+			printf("\n");
+	}
 }

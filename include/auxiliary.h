@@ -1,6 +1,7 @@
 #ifndef _AUXILIARY_H_
 #define _AUXILIARY_H_
 
+#include "stdio.h"
 #include "stdlib.h"
 
 // getBitAmount retorna o mínimo número de bits necessários para
@@ -15,5 +16,7 @@ int8_t * shortenBytes(int * data, int datasize, int * retsize);
 
 // unshortenBytes faz o processo inverso de shortenBytes
 int32_t * unshortenBytes(int8_t * data, int datasize, int * retsize);
+
+void printBits(int * v, int size);
 
 #endif
