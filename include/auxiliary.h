@@ -14,6 +14,6 @@ int getBitAmount(int number);
 int8_t * shortenBytes(int * data, int datasize, int * retsize);
 
 // unshortenBytes faz o processo inverso de shortenBytes
-int * unshortenBytes(int8_t * data, int datasize, int * retsize);
+int32_t * unshortenBytes(int8_t * data, int datasize, int * retsize);
 
-#endif 
+#endif

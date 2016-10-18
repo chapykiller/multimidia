@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
     }
 
     int32_t *samples;
-    int newSize;
+    int new_size;
 
-    samples = unshortenBytes(shortenedSamples, samples_size, &newSize);
+    samples = unshortenBytes(shortenedSamples, samples_size, &new_size);
     if(samples == 0) {
         free(shortenedSamples);
         free(header);
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     }
 
     free(shortenedSamples);
-    samples_size = newSize;
+    samples_size = new_size;
 
     if(bHuffman == 1) {
         int newSize;
@@ -184,7 +184,7 @@ int saveWave(char *filename, wav_hdr* header, int8_t *data) {
 
 	fwrite(header, sizeof(wav_hdr), 1, f);
 
-    fwrite(data, (int)(header->Subchunk2Size)*sizeof(int8_t), (int)(header->NumOfChan), f);
+    fwrite(data, (int)(header->Subchunk2Size)*sizeof(int8_t), 1, f);
 
 	fclose(f);
 
@@ -195,7 +195,7 @@ int saveWave(char *filename, wav_hdr* header, int8_t *data) {
 int8_t* obtainBytes(wav_hdr *header, int32_t *samples) {
     int samples_size = (header->Subchunk2Size * 8)/header->bitsPerSample;
 
-    int8_t *data = (int8_t*)malloc(header->Subchunk2Size * sizeof(int8_t));
+    int8_t *data = (int8_t*)malloc(( (int)(header->Subchunk2Size) ) * sizeof(int8_t));
 
     if(data == 0) {
         return 0;

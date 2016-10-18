@@ -60,7 +60,7 @@ int8_t * shortenBytes(int * data, int datasize, int * retsize){
 	return ret;
 }
 
-int * unshortenBytes(int8_t * data, int datasize, int * retsize){
+int32_t * unshortenBytes(int8_t * data, int datasize, int * retsize){
 	// Separa o header e extrai seus dados
 	int8_t headerbyte = data[0];
 
@@ -69,7 +69,7 @@ int * unshortenBytes(int8_t * data, int datasize, int * retsize){
 
 	// Calcula o tamanho do vetor de retorno
 	int intcount = (totalbits-8)/bitsperword;
-	int * ret = (int *)calloc(intcount, sizeof(int));
+	int32_t * ret = (int32_t *)calloc(intcount, sizeof(int32_t));
 
 	// currentbit guarda a posição do último bit
 	// a qual não foi escrito nada no vetor de saída

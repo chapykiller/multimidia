@@ -30,9 +30,9 @@ wav_hdr* readWave(char *filename, int8_t **data) {
 
 	fread(header, headerSize, 1, f);
 
-    *data = (int8_t*)malloc(( (int)(header->Subchunk2Size) * (int)(header->NumOfChan) ) * sizeof(int8_t));
+    *data = (int8_t*)malloc(( (int)(header->Subchunk2Size) ) * sizeof(int8_t));
 
-    fread(*data, (int)(header->Subchunk2Size)*sizeof(int8_t), (int)(header->NumOfChan), f);
+    fread(*data, (int)(header->Subchunk2Size)*sizeof(int8_t), 1, f);
 
 	fileLength = getFileSize(f);
 	fclose(f);
