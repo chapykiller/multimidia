@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
         for(j = 0; j < 2; j++) {
             if(filenames[j][0] == '\0') {
                 strcpy(filenames[j], argv[i]);
+                j = 2;
             }
         }
     }
@@ -146,10 +147,11 @@ wav_hdr* readFile(char *filename, int *difference, int *runlength, int *huffman,
     int8_t codHeader = 0;
 
     // Lê o nosso cabeçalho
-    fread((void*)&codHeader, sizeof(int8_t), 1, f);
-    fread((void*)data_size, sizeof(int), 1, f);
+    fread(&codHeader, sizeof(int8_t), 1, f);
+    fread(data_size, sizeof(int), 1, f);
 
-    (*data) = (int8_t*)malloc(*data_size * sizeof(int8_t));
+    *data = (int8_t*)malloc((*data_size) * sizeof(int8_t));
+
     if(*data == 0) {
         free(header);
         fclose(f);
@@ -157,10 +159,10 @@ wav_hdr* readFile(char *filename, int *difference, int *runlength, int *huffman,
     }
 
     // Lê o cabeçalho do wave
-    fread((void*)header, sizeof(wav_hdr), 1, f);
+    fread(header, sizeof(wav_hdr), 1, f);
 
-    // Salva os dados codificados
-    fread((void*)data, *data_size*sizeof(int8_t), 1, f);
+    // Lê os dados codificados
+    fread(*data, (*data_size)*sizeof(int8_t), 1, f);
 
     *difference = (int)(codHeader & 0b10000000);
     *runlength = (int)(codHeader & 0b01000000);

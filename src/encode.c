@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
             for(j = 0; j < 2; j++) {
                 if(filenames[j][0] == '\0') {
                     strcpy(filenames[j], argv[i]);
+                    j = 2;
                 }
             }
         }
@@ -163,14 +164,14 @@ int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr
     codHeader = (int8_t)(( (difference<<2) + (runlength<<1) + (huffman<<0) ) << 5);
 
     // Salva o nosso cabeçalho
-    fwrite((void*)&codHeader, sizeof(int8_t), 1, f);
-    fwrite((void*)&data_size, sizeof(int), 1, f);
+    fwrite(&codHeader, sizeof(int8_t), 1, f);
+    fwrite(&data_size, sizeof(int), 1, f);
 
     // Salva o cabeçalho do wave
-    fwrite((void*)header, sizeof(wav_hdr), 1, f);
+    fwrite(header, sizeof(wav_hdr), 1, f);
 
     // Salva os dados codificados
-    fwrite((void*)data, data_size*sizeof(int8_t), 1, f);
+    fwrite(data, data_size*sizeof(int8_t), 1, f);
 
     fclose(f);
 

@@ -69,7 +69,7 @@ int * unshortenBytes(int8_t * data, int datasize, int * retsize){
 
 	// Calcula o tamanho do vetor de retorno
 	int intcount = (totalbits-8)/bitsperword;
-	int * ret = (int *)malloc(intcount*sizeof(int));
+	int * ret = (int *)calloc(intcount, sizeof(int));
 
 	// currentbit guarda a posição do último bit
 	// a qual não foi escrito nada no vetor de saída
