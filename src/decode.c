@@ -133,6 +133,7 @@ int main(int argc, char *argv[]) {
 // Salva o arquivo codificado
 wav_hdr* readFile(char *filename, int *difference, int *runlength, int *huffman, int8_t **data, int *data_size, int8_t **footer, int *footer_size) {
     FILE *f;
+    int fileLength = 0;
 
     f = fopen(filename, "r");
 	if(f == NULL) {
@@ -149,10 +150,13 @@ wav_hdr* readFile(char *filename, int *difference, int *runlength, int *huffman,
     // Cabeçalho
     int8_t codHeader = 0;
 
+    fileLength = getFileSize(f);
+
     // Lê o nosso cabeçalho
     fread(&codHeader, sizeof(int8_t), 1, f);
     fread(data_size, sizeof(int), 1, f);
-    fread(footer_size, sizeof(int), 1, f);
+
+    *footer_size = fileLength - sizeof(int8_t) - sizeof(int) - sizeof(wav_hdr) - *data_size;
 
     *data = (int8_t*)malloc((*data_size) * sizeof(int8_t));
     *footer = (int8_t*)malloc((*footer_size) * sizeof(int8_t));

@@ -39,7 +39,7 @@ int32_t* differenceEncode(int32_t *orig, int orig_size, int *dest_size) {
     }
 
     numBits = getBitAmount(max);
-    int numBlocks = ceil((double)32.0/(double)numBits);
+    int numBlocks = ceil((double)getBitAmount(aux[0])/(double)numBits);
 
     *dest_size = orig_size - 1 + numBlocks + 2;
     dest = (int32_t*)malloc(*dest_size * sizeof(int32_t));
@@ -55,10 +55,10 @@ int32_t* differenceEncode(int32_t *orig, int orig_size, int *dest_size) {
     dest[1] = (minimum < 0) ? dest[1] + 1 : dest[1];
 
     // Divide a primeira amostra em numBlocks blocos de numBits bits
-    int blockMask = ~(-1 << numBits);
+    int32_t blockMask = ~(-1 << numBits);
 
     for(i = 0; i < numBlocks; i++) {
-        int value = aux[0] >> ( (numBlocks - i -1) * numBits );
+        int32_t value = aux[0] >> ( (numBlocks - i -1) * numBits );
         dest[2 + i] = value & blockMask;
     }
 

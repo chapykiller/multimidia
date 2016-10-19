@@ -172,7 +172,6 @@ int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr
     // Salva o nosso cabeçalho
     fwrite(&codHeader, sizeof(int8_t), 1, f);
     fwrite(&data_size, sizeof(int), 1, f);
-    fwrite(&footer_size, sizeof(int), 1, f);
 
     // Salva o cabeçalho do wave
     fwrite(header, sizeof(wav_hdr), 1, f);
@@ -205,7 +204,7 @@ int32_t* obtainSamples(wav_hdr *header, int8_t *data, int *samples_size) {
         samples[count] = 0;
 
         for(j = 0; j < header->bitsPerSample/8; j++) {
-            samples[count] += (data[i+j] << ( (header->bitsPerSample/8) - j - 1) * 8 );
+            samples[count] |= (((int32_t)data[i+j])&0x000000ff) << (( (header->bitsPerSample/8) - j - 1) * 8 );
         }
 
         count += 1;
