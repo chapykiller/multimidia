@@ -9,7 +9,7 @@
 #include "huffman.h"
 #include "auxiliary.h"
 
-int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size);
+int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size, int8_t *footer, int footer_size);
 
 int32_t* obtainSamples(wav_hdr *header, int8_t *data, int *samples_size);
 
@@ -67,10 +67,11 @@ int main(int argc, char *argv[]) {
     // }
 
     // Lê o arquivo wave que será codificado
-    int8_t *wav_data;
+    int8_t *wav_data, *footer;
     wav_hdr* header;
+    int footer_size;
 
-    header = readWave(filenames[0], &wav_data);
+    header = readWave(filenames[0], &wav_data, &footer, &footer_size);
     if(header == 0) {
         return -1;
     }
@@ -80,8 +81,6 @@ int main(int argc, char *argv[]) {
 
     // Separa os bytes lidos em amostras de no máximo 32 bits
     samples = obtainSamples(header, wav_data, &samples_size);
-
-    printf("Sampling: %d elements\n", samples_size);
 
     if(samples_size < 0) {
         free(header);
@@ -99,8 +98,6 @@ int main(int argc, char *argv[]) {
         samples_size = newSize;
     }
 
-    printf("Difference: %d elements\n", samples_size);
-
     if(bRunlength == 1) {
         int newSize;
         int32_t *newSamples = writeRunlength(samples, samples_size, &newSize);
@@ -110,8 +107,6 @@ int main(int argc, char *argv[]) {
         samples = newSamples;
         samples_size = newSize;
     }
-
-    printf("Runlength: %d elements\n", samples_size);
 
     if(bHuffman == 1) {
         int newSize;
@@ -123,17 +118,6 @@ int main(int argc, char *argv[]) {
         samples_size = newSize;
     }
 
-    // printBits(samples, samples_size);
-
-    printf("Huffman: %d elements\n", samples_size);
-
-    // {
-    //     int retsize;
-    //     int * t = readHuffmanData(samples, samples_size, &retsize);
-
-    //     printf("\tHuffman: %d -> %d\n", samples_size, retsize);
-    // }
-
     int8_t *shortenedSamples;
     int newSize;
 
@@ -143,22 +127,22 @@ int main(int argc, char *argv[]) {
         free(samples);
         free(header);
         free(wav_data);
+        free(footer);
 
         return -1;
     }
 
     free(samples);
     samples_size = newSize;
-    
-    printf("Shortened: %d elements\n", samples_size);
 
     // Salva o arquivo codificado
-    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, shortenedSamples, samples_size ) != 0) {
+    if(saveFile(filenames[1], bDifference, bRunlength, bHuffman, header, shortenedSamples, samples_size, footer, footer_size ) != 0) {
         printf("\nNão foi possível salvar o arquivo codificado\n");
 
         free(header);
         free(wav_data);
         free(shortenedSamples);
+        free(footer);
 
         return -1;
     }
@@ -166,12 +150,13 @@ int main(int argc, char *argv[]) {
     free(header);
     free(wav_data);
     free(shortenedSamples);
+    free(footer);
 
     return 0;
 }
 
 // Salva o arquivo codificado
-int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size) {
+int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr* header, int8_t *data, int data_size, int8_t *footer, int footer_size) {
     FILE *f;
 
     f = fopen(filename, "w");
@@ -187,12 +172,16 @@ int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr
     // Salva o nosso cabeçalho
     fwrite(&codHeader, sizeof(int8_t), 1, f);
     fwrite(&data_size, sizeof(int), 1, f);
+    fwrite(&footer_size, sizeof(int), 1, f);
 
     // Salva o cabeçalho do wave
     fwrite(header, sizeof(wav_hdr), 1, f);
 
     // Salva os dados codificados
     fwrite(data, data_size*sizeof(int8_t), 1, f);
+
+    // Salva o footer
+    fwrite(footer, footer_size*sizeof(int8_t), 1, f);
 
     fclose(f);
 

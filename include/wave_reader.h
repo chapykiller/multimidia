@@ -23,6 +23,8 @@ typedef struct  WAV_HEADER{
 
 int getFileSize(FILE *inFile);
 
-wav_hdr* readWave(char *filename, int8_t **data);
+wav_hdr* readWave(char *filename, int8_t **data, int8_t **footer, int *footer_size);
+
+int saveWave(char *filename, wav_hdr* header, int8_t *data, int8_t *footer, int footer_size);
 
 #endif
