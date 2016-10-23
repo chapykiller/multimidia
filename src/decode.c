@@ -61,7 +61,8 @@ int main(int argc, char *argv[]) {
     if(samples == 0) {
         free(shortenedSamples);
         free(header);
-        free(footer);
+        if(footer_size > 0)
+            free(footer);
 
         return -1;
     }
@@ -105,7 +106,8 @@ int main(int argc, char *argv[]) {
     if(wav_data == 0) {
         free(samples);
         free(header);
-        free(footer);
+        if(footer_size > 0)
+            free(footer);
 
         return -1;
     }
@@ -117,7 +119,8 @@ int main(int argc, char *argv[]) {
         free(header);
         free(wav_data);
         free(samples);
-        free(footer);
+        if(footer_size > 0)
+            free(footer);
 
         return -1;
     }
@@ -125,7 +128,8 @@ int main(int argc, char *argv[]) {
     free(header);
     free(wav_data);
     free(samples);
-    free(footer);
+    if(footer_size > 0)
+        free(footer);
 
     return 0;
 }
@@ -159,7 +163,8 @@ wav_hdr* readFile(char *filename, int *difference, int *runlength, int *huffman,
     *footer_size = fileLength - sizeof(int8_t) - sizeof(int) - sizeof(wav_hdr) - *data_size;
 
     *data = (int8_t*)malloc((*data_size) * sizeof(int8_t));
-    *footer = (int8_t*)malloc((*footer_size) * sizeof(int8_t));
+    if(*footer_size > 0)
+        *footer = (int8_t*)malloc((*footer_size) * sizeof(int8_t));
 
     if(*data == 0) {
         free(header);
@@ -167,12 +172,13 @@ wav_hdr* readFile(char *filename, int *difference, int *runlength, int *huffman,
         return 0;
     }
 
-    if(*footer == 0) {
-        free(header);
-        free(data);
-        fclose(f);
-        return 0;
-    }
+    if(*footer_size > 0)
+        if(*footer == 0) {
+            free(header);
+            free(data);
+            fclose(f);
+            return 0;
+        }
 
     // Lê o cabeçalho do wave
     fread(header, sizeof(wav_hdr), 1, f);
@@ -181,7 +187,8 @@ wav_hdr* readFile(char *filename, int *difference, int *runlength, int *huffman,
     fread(*data, (*data_size)*sizeof(int8_t), 1, f);
 
     // Lê o footer
-    fread(*footer, (*footer_size)*sizeof(int8_t), 1, f);
+    if(*footer_size > 0)
+        fread(*footer, (*footer_size)*sizeof(int8_t), 1, f);
 
     *difference = (int)(codHeader & 0b10000000)!=0;
     *runlength = (int)(codHeader & 0b01000000)!=0;

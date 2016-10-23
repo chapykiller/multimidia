@@ -4,7 +4,7 @@ OBJDIR = obj
 PROGRAM1 = encode
 PROGRAM2 = decode
 
-CFLAGS = -I./include -g
+CFLAGS = -I./include -O2
 lib= -lm
 CXX = gcc
 

@@ -47,8 +47,6 @@ int main(int argc, char *argv[]) {
         else if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "-H") == 0) {
             bHuffman = 1;
         }
-        else if(strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "-V") == 0) {
-        }
         // Salva os nomes de origem e destino
         else {
             int j;
@@ -61,10 +59,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // if(bHuffman == 0 && bDifference == 0 && bRunlength == 0) {
-    //     printf("\nPelo menos uma das opções de codificação deve ser passada.\n");
-    //     return -1;
-    // }
+    if(bHuffman == 0 && bDifference == 0 && bRunlength == 0) {
+        printf("\nPelo menos uma das opções de codificação deve ser passada.\n");
+        return -1;
+    }
 
     // Lê o arquivo wave que será codificado
     int8_t *wav_data, *footer;
@@ -127,7 +125,8 @@ int main(int argc, char *argv[]) {
         free(samples);
         free(header);
         free(wav_data);
-        free(footer);
+        if(footer_size > 0)
+            free(footer);
 
         return -1;
     }
@@ -142,7 +141,8 @@ int main(int argc, char *argv[]) {
         free(header);
         free(wav_data);
         free(shortenedSamples);
-        free(footer);
+        if(footer_size > 0)
+            free(footer);
 
         return -1;
     }
@@ -150,7 +150,8 @@ int main(int argc, char *argv[]) {
     free(header);
     free(wav_data);
     free(shortenedSamples);
-    free(footer);
+    if(footer_size > 0)
+        free(footer);
 
     return 0;
 }
@@ -180,6 +181,7 @@ int saveFile(char *filename, int difference, int runlength, int huffman, wav_hdr
     fwrite(data, data_size*sizeof(int8_t), 1, f);
 
     // Salva o footer
+    if(footer_size > 0)
     fwrite(footer, footer_size*sizeof(int8_t), 1, f);
 
     fclose(f);

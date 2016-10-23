@@ -38,9 +38,11 @@ wav_hdr* readWave(char *filename, int8_t **data, int8_t **footer, int *footer_si
 
     *footer_size = fileLength - (int)(header->Subchunk2Size) - (int)(sizeof(wav_hdr));
 
-    *footer = (int8_t*)malloc( (*footer_size) * sizeof(int8_t));
+    if(*footer_size > 0) {
+        *footer = (int8_t*)malloc( (*footer_size) * sizeof(int8_t));
 
-    fread(*footer, ( fileLength - (int)(header->Subchunk2Size) - (int)(sizeof(wav_hdr)) ) * sizeof(int8_t), 1, f);
+        fread(*footer, ( fileLength - (int)(header->Subchunk2Size) - (int)(sizeof(wav_hdr)) ) * sizeof(int8_t), 1, f);
+    }
 
 	fclose(f);
 
@@ -60,7 +62,8 @@ int saveWave(char *filename, wav_hdr* header, int8_t *data, int8_t *footer, int 
 
     fwrite(data, (int)(header->Subchunk2Size)*sizeof(int8_t), 1, f);
 
-    fwrite(footer, footer_size*sizeof(int8_t), 1, f);
+    if(footer_size > 0)
+        fwrite(footer, footer_size*sizeof(int8_t), 1, f);
 
 	fclose(f);
 
